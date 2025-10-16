@@ -1,6 +1,6 @@
 package com.pawvent.pawventserver.domain;
 
-import java.awt.Point;
+import org.locationtech.jts.geom.Point;
 import java.time.OffsetDateTime;
 
 import org.hibernate.annotations.BatchSize;

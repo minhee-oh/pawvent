@@ -52,6 +52,14 @@ public class CommunityPost extends BaseTime {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    // 좋아요 수 캐시 (성능 최적화)
+    @Column(name = "likes_count", nullable = false)
+    private Integer likesCount = 0;
+
+    // 댓글 수 캐시 (성능 최적화)
+    @Column(name = "comments_count", nullable = false)
+    private Integer commentsCount = 0;
+
     // 소프트 삭제
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
