@@ -35,17 +35,24 @@ public class User extends BaseTime {
     private Long id;
 
     @Column(name = "kakao_id", unique = true)
-    private String kakaoId;
+    private Long kakaoId;
+
+    @Column(length = 100)
+    private String email;
 
     @Column(length = 40, nullable = false)
     private String nickname;
 
-    @Column(name = "image_url")
-    private String imageUrl;
+    @Column(name = "profile_image_url")
+    private String profileImageUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+
+    // 게시글 수 캐시 (성능 최적화)
+    @Column(name = "posts_count", nullable = false)
+    private Integer postsCount = 0;
 
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
