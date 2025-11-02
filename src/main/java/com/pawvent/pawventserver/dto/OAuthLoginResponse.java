@@ -14,3 +14,6 @@ public class OAuthLoginResponse {
     private boolean isNewUser; // 신규 가입 여부
 }
 
+
+
+

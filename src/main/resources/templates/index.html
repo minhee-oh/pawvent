@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pawvent - 반려견 안전 산책 지도</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 600px;
+        }
+        .logo {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 1rem;
+            font-size: 2.5rem;
+        }
+        p {
+            color: #666;
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .feature {
+            padding: 1.5rem;
+            background: #f8f9ff;
+            border-radius: 10px;
+            border: 2px solid #e8ecff;
+        }
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            margin: 0.5rem;
+        }
+        .btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        .btn-kakao {
+            background: #FEE500;
+            color: #3A1D1D;
+        }
+        .btn-kakao:hover {
+            background: #F5DC00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🐕</div>
+        <h1>Pawvent</h1>
+        <p>반려견과 함께하는 안전한 산책을 위한<br>스마트 지도 서비스</p>
+        
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">📍</div>
+                <h3>실시간 지도</h3>
+                <p>카카오맵 기반 정확한 위치 정보</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">⚠️</div>
+                <h3>위험 스팟 알림</h3>
+                <p>사용자들이 신고한 위험 요소 실시간 공유</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🛤️</div>
+                <h3>산책 루트 저장</h3>
+                <p>즐겨 찾는 산책 코스를 저장하고 공유</p>
+            </div>
+        </div>
+        
+        <div>
+            <a href="/oauth2/authorization/kakao" class="btn btn-kakao">카카오로 시작하기</a>
+            <a href="/dashboard" class="btn">둘러보기</a>
+        </div>
+    </div>
+</body>
+</html>
+

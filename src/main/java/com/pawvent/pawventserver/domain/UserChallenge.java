@@ -25,7 +25,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor 
 @AllArgsConstructor 
-@Builder
+@Builder(toBuilder = true)
 @EqualsAndHashCode(of = "id")
 @Entity 
 @Table(name = "user_challenge",uniqueConstraints = {@UniqueConstraint(name = "uq_user_challenge_user_challenge", columnNames = {"user_id", "challenge_id"})}, indexes = { @Index(name = "ix_user_challenge_user", columnList = "user_id") })
@@ -34,11 +34,21 @@ public class UserChallenge extends BaseTime {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(precision = 10, scale = 2)
-    private java.math.BigDecimal progress; // 0.00 ~
+    /** 현재 진행 값 */
+    @Column(name = "current_value")
+    private Integer currentValue = 0;
 
-    @Column(name = "is_success", nullable = false)
-    private boolean isSuccess;
+    /** 완료 여부 */
+    @Column(name = "is_completed", nullable = false)
+    private Boolean isCompleted = false;
+
+    /** 완료 시간 */
+    @Column(name = "completed_at")
+    private java.time.OffsetDateTime completedAt;
+
+    /** 삭제 시간 (소프트 삭제) */
+    @Column(name = "deleted_at")
+    private java.time.OffsetDateTime deletedAt;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)

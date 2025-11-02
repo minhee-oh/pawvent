@@ -18,3 +18,6 @@ public class PostCreateRequest {
     private PostCategory category;
 }
 
+
+
+
