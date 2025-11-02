@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 - Pawvent</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-container {
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        .logo {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 2rem;
+        }
+        .kakao-login {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            background: #FEE500;
+            color: #3A1D1D;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        .kakao-login:hover {
+            background: #F5DC00;
+            transform: translateY(-2px);
+        }
+        .error-message {
+            color: #e53e3e;
+            margin-top: 1rem;
+            padding: 0.5rem;
+            background: #fed7d7;
+            border-radius: 5px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 1rem;
+            color: #667eea;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">🐕</div>
+        <h2>로그인</h2>
+        
+        <a href="/oauth2/authorization/kakao" class="kakao-login">
+            카카오 계정으로 로그인
+        </a>
+        
+        <div th:if="${param.error}" class="error-message">
+            로그인 중 오류가 발생했습니다. 다시 시도해주세요.
+        </div>
+        
+        <a href="/" class="back-link">← 홈으로 돌아가기</a>
+    </div>
+</body>
+</html>
+

@@ -30,7 +30,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor 
 @AllArgsConstructor 
-@Builder
+@Builder(toBuilder = true)
 @EqualsAndHashCode(of = "id")
 @Entity 
 @Table(name = "report", 
@@ -58,6 +58,9 @@ public class Report extends BaseTime {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String reason;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
     // 신고 대상 엔티티 (polymorphic association)
     @Column(name = "target_entity_type", nullable = false, length = 50)
     private String targetEntityType; // "CommunityPost", "Comment", "Hazard", "User" etc.
@@ -72,6 +75,9 @@ public class Report extends BaseTime {
     @Column(name = "processed_at")
     private OffsetDateTime processedAt;
 
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "reporter_id", nullable = false)
     private User reporter;
@@ -83,7 +89,7 @@ public class Report extends BaseTime {
 
     // 신고 처리
     public void resolve(String adminResponse, User admin) {
-        this.status = ReportStatus.RESOLVED;
+        this.status = ReportStatus.APPROVED;
         this.adminResponse = adminResponse;
         this.processedBy = admin;
         this.processedAt = OffsetDateTime.now();
@@ -99,6 +105,7 @@ public class Report extends BaseTime {
 
     // 검토 시작
     public void startReview() {
-        this.status = ReportStatus.REVIEWING;
+        this.status = ReportStatus.IN_PROGRESS;
     }
 }
+

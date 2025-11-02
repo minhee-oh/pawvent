@@ -14,6 +14,11 @@ java {
 	}
 }
 
+// 컴파일 옵션: 파라미터 이름 보존 (리플렉션을 통한 파라미터 이름 접근)
+tasks.withType(JavaCompile) {
+	options.compilerArgs += ['-parameters']
+}
+
 configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
@@ -36,9 +41,12 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	
-	// PostgreSQL & PostGIS
+	// PostgreSQL & PostGIS (운영용)
 	implementation 'org.postgresql:postgresql' // PostgreSQL JDBC 드라이버
     implementation 'org.hibernate.orm:hibernate-spatial' // 하이버네이트 공간 데이터 처리 지원
+    
+    // H2 Database (테스트용)
+    runtimeOnly 'com.h2database:h2'
     
     // JWT & Auth
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'

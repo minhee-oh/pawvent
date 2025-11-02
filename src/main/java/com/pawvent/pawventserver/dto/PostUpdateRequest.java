@@ -18,3 +18,6 @@ public class PostUpdateRequest {
     private PostCategory category;
 }
 
+
+
+

@@ -24,7 +24,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor 
 @AllArgsConstructor 
-@Builder
+@Builder(toBuilder = true)
 @EqualsAndHashCode(of = "id")
 @Entity @Table(name = "bookmark",uniqueConstraints = {@UniqueConstraint(name = "uq_bookmark_user_hazard", columnNames = {"user_id", "hazard_id"})},indexes = { @Index(name = "ix_bookmark_user", columnList = "user_id") })
 public class Bookmark extends BaseTime {

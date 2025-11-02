@@ -13,3 +13,8 @@ public class WalkSessionCreateRequest {
     private Integer duration; // seconds
 }
 
+
+
+
+
+

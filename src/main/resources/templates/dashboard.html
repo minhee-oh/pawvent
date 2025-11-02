@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>대시보드 - Pawvent</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+        }
+        .header {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #5a67d8;
+        }
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .panel {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .panel-title {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: #2d3748;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+        }
+        #map {
+            height: 400px;
+            width: 100%;
+            border-radius: 10px;
+        }
+        .control-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .form-group label {
+            font-weight: 500;
+            color: #4a5568;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        .route-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .route-item {
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .route-item:hover {
+            background: #f7fafc;
+            border-color: #667eea;
+        }
+        .route-name {
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+        .route-info {
+            font-size: 0.9rem;
+            color: #718096;
+        }
+        .hazard-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: #000;
+        }
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">🐕 Pawvent</div>
+        <div class="nav-buttons">
+            <button class="btn btn-secondary" onclick="showRouteModal()">루트 저장</button>
+            <button class="btn btn-secondary" onclick="showHazardModal()">위험 신고</button>
+            <button class="btn btn-primary">내 정보</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="dashboard-grid">
+            <div class="panel">
+                <h3 class="panel-title">컨트롤 패널</h3>
+                <div class="control-panel">
+                    <div class="hazard-controls">
+                        <button class="btn btn-secondary" onclick="toggleHazards()">위험지역 표시</button>
+                        <button class="btn btn-secondary" onclick="findCurrentLocation()">내 위치</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>검색</label>
+                        <input type="text" id="searchInput" placeholder="장소를 검색하세요">
+                        <button class="btn btn-primary" onclick="searchPlace()">검색</button>
+                    </div>
+
+                    <div class="panel">
+                        <h4>내 산책 루트</h4>
+                        <div class="route-list" id="routeList">
+                            <!-- 루트 목록이 여기에 동적으로 추가됩니다 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3 class="panel-title">지도</h3>
+                <div id="map"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 루트 저장 모달 -->
+    <div id="routeModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('routeModal')">&times;</span>
+            <h3>산책 루트 저장</h3>
+            <div class="form-group">
+                <label>루트 이름</label>
+                <input type="text" id="routeName" placeholder="예: 한강 공원 산책로">
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="shareRoute"> 다른 사용자와 공유
+                </label>
+            </div>
+            <button class="btn btn-primary" onclick="saveRoute()">저장</button>
+        </div>
+    </div>
+
+    <!-- 위험 신고 모달 -->
+    <div id="hazardModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('hazardModal')">&times;</span>
+            <h3>위험 스팟 신고</h3>
+            <div class="form-group">
+                <label>위험 유형</label>
+                <select id="hazardCategory">
+                    <option value="BROKEN_ROAD">파손된 도로</option>
+                    <option value="AGGRESSIVE_DOG">공격적인 개</option>
+                    <option value="TRAFFIC_DANGER">교통 위험</option>
+                    <option value="TOXIC_PLANT">독성 식물</option>
+                    <option value="CONSTRUCTION">공사 구간</option>
+                    <option value="OTHER">기타</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>설명</label>
+                <textarea id="hazardDescription" rows="3" placeholder="위험 요소에 대해 자세히 설명해주세요"></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="reportHazard()">신고하기</button>
+        </div>
+    </div>
+
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=YOUR_KAKAO_MAP_API_KEY&libraries=services"></script>
+    <script>
+        let map;
+        let currentPath = null;
+        let hazardMarkers = [];
+        let isDrawingRoute = false;
+        let routeCoordinates = [];
+        let selectedPosition = null;
+
+        // 카카오맵 초기화
+        function initMap() {
+            const container = document.getElementById('map');
+            const options = {
+                center: new kakao.maps.LatLng(37.566826, 126.9786567), // 서울 시청
+                level: 3
+            };
+
+            map = new kakao.maps.Map(container, options);
+
+            // 지도 클릭 이벤트
+            kakao.maps.event.addListener(map, 'click', function(mouseEvent) {
+                if (isDrawingRoute) {
+                    addRoutePoint(mouseEvent.latLng);
+                } else {
+                    selectedPosition = mouseEvent.latLng;
+                }
+            });
+
+            loadUserRoutes();
+            loadNearbyHazards();
+        }
+
+        // 현재 위치 찾기
+        function findCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const locPosition = new kakao.maps.LatLng(lat, lng);
+                    
+                    map.setCenter(locPosition);
+                    
+                    // 현재 위치 마커
+                    const marker = new kakao.maps.Marker({
+                        position: locPosition,
+                        map: map
+                    });
+
+                    loadNearbyHazards();
+                });
+            }
+        }
+
+        // 장소 검색
+        function searchPlace() {
+            const keyword = document.getElementById('searchInput').value;
+            if (!keyword) return;
+
+            const ps = new kakao.maps.services.Places();
+            ps.keywordSearch(keyword, function(data, status) {
+                if (status === kakao.maps.services.Status.OK) {
+                    const place = data[0];
+                    const coords = new kakao.maps.LatLng(place.y, place.x);
+                    
+                    map.setCenter(coords);
+                    
+                    new kakao.maps.Marker({
+                        position: coords,
+                        map: map
+                    });
+                }
+            });
+        }
+
+        // 루트 그리기 시작/중지
+        function toggleRouteDrawing() {
+            isDrawingRoute = !isDrawingRoute;
+            if (isDrawingRoute) {
+                routeCoordinates = [];
+                alert('지도를 클릭하여 경로를 그려보세요. 완료 후 루트 저장 버튼을 클릭하세요.');
+            } else {
+                finishRoute();
+            }
+        }
+
+        // 루트 포인트 추가
+        function addRoutePoint(latLng) {
+            routeCoordinates.push(latLng);
+            
+            // 마커 추가
+            new kakao.maps.Marker({
+                position: latLng,
+                map: map
+            });
+
+            // 선 그리기
+            if (routeCoordinates.length > 1) {
+                if (currentPath) {
+                    currentPath.setMap(null);
+                }
+                
+                currentPath = new kakao.maps.Polyline({
+                    path: routeCoordinates,
+                    strokeWeight: 5,
+                    strokeColor: '#667eea',
+                    strokeOpacity: 0.7,
+                    strokeStyle: 'solid'
+                });
+                
+                currentPath.setMap(map);
+            }
+        }
+
+        // 위험지역 표시 토글
+        function toggleHazards() {
+            if (hazardMarkers.length > 0) {
+                hazardMarkers.forEach(marker => marker.setMap(null));
+                hazardMarkers = [];
+            } else {
+                loadNearbyHazards();
+            }
+        }
+
+        // 주변 위험지역 로드
+        function loadNearbyHazards() {
+            const center = map.getCenter();
+            fetch(`/api/hazards/nearby?latitude=${center.getLat()}&longitude=${center.getLng()}&radius=1000`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        data.data.forEach(hazard => {
+                            const position = new kakao.maps.LatLng(hazard.location.y, hazard.location.x);
+                            const marker = new kakao.maps.Marker({
+                                position: position,
+                                map: map,
+                                image: new kakao.maps.MarkerImage(
+                                    'data:image/svg+xml;base64,' + btoa('⚠️'), // 경고 아이콘
+                                    new kakao.maps.Size(30, 30)
+                                )
+                            });
+                            
+                            hazardMarkers.push(marker);
+
+                            // 인포윈도우
+                            const infoWindow = new kakao.maps.InfoWindow({
+                                content: `<div style="padding:5px;">${hazard.category}: ${hazard.description}</div>`
+                            });
+
+                            kakao.maps.event.addListener(marker, 'click', function() {
+                                infoWindow.open(map, marker);
+                            });
+                        });
+                    }
+                });
+        }
+
+        // 사용자 루트 로드
+        function loadUserRoutes() {
+            fetch('/api/routes/my')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const routeList = document.getElementById('routeList');
+                        routeList.innerHTML = '';
+                        
+                        data.data.forEach(route => {
+                            const routeItem = document.createElement('div');
+                            routeItem.className = 'route-item';
+                            routeItem.innerHTML = `
+                                <div class="route-name">${route.name}</div>
+                                <div class="route-info">
+                                    거리: ${route.distance ? Math.round(route.distance) + 'm' : '미측정'} | 
+                                    ${route.isShared ? '공유됨' : '비공개'}
+                                </div>
+                            `;
+                            routeItem.onclick = () => showRouteOnMap(route);
+                            routeList.appendChild(routeItem);
+                        });
+                    }
+                });
+        }
+
+        // 지도에 루트 표시
+        function showRouteOnMap(route) {
+            // 기존 경로 제거
+            if (currentPath) {
+                currentPath.setMap(null);
+            }
+
+            // WKT 형식의 LineString을 좌표 배열로 변환 (간단한 파싱)
+            const coordinates = parseLineString(route.routeData);
+            
+            currentPath = new kakao.maps.Polyline({
+                path: coordinates,
+                strokeWeight: 5,
+                strokeColor: '#667eea',
+                strokeOpacity: 0.7
+            });
+            
+            currentPath.setMap(map);
+
+            // 경로 중심으로 지도 이동
+            if (coordinates.length > 0) {
+                map.setCenter(coordinates[Math.floor(coordinates.length / 2)]);
+            }
+        }
+
+        // LineString WKT를 좌표 배열로 변환하는 간단한 파서
+        function parseLineString(wkt) {
+            // 실제 구현에서는 더 정교한 WKT 파서가 필요합니다
+            // 여기서는 예시용 간단한 구현입니다
+            return [];
+        }
+
+        // 모달 관련 함수들
+        function showRouteModal() {
+            document.getElementById('routeModal').style.display = 'block';
+        }
+
+        function showHazardModal() {
+            if (!selectedPosition) {
+                alert('먼저 지도에서 신고할 위치를 클릭해주세요.');
+                return;
+            }
+            document.getElementById('hazardModal').style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // 루트 저장
+        function saveRoute() {
+            if (routeCoordinates.length < 2) {
+                alert('최소 2개 이상의 지점을 선택해야 합니다.');
+                return;
+            }
+
+            const routeName = document.getElementById('routeName').value;
+            const isShared = document.getElementById('shareRoute').checked;
+            
+            if (!routeName) {
+                alert('루트 이름을 입력해주세요.');
+                return;
+            }
+
+            const requestData = {
+                name: routeName,
+                coordinates: routeCoordinates.map(coord => ({
+                    latitude: coord.getLat(),
+                    longitude: coord.getLng()
+                })),
+                isShared: isShared
+            };
+
+            fetch('/api/routes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('루트가 저장되었습니다!');
+                    closeModal('routeModal');
+                    loadUserRoutes();
+                    
+                    // 초기화
+                    routeCoordinates = [];
+                    isDrawingRoute = false;
+                } else {
+                    alert('루트 저장에 실패했습니다.');
+                }
+            });
+        }
+
+        // 위험 스팟 신고
+        function reportHazard() {
+            if (!selectedPosition) {
+                alert('신고할 위치를 선택해주세요.');
+                return;
+            }
+
+            const category = document.getElementById('hazardCategory').value;
+            const description = document.getElementById('hazardDescription').value;
+
+            const requestData = {
+                category: category,
+                description: description,
+                latitude: selectedPosition.getLat(),
+                longitude: selectedPosition.getLng()
+            };
+
+            fetch('/api/hazards/report', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('위험 스팟이 신고되었습니다!');
+                    closeModal('hazardModal');
+                    loadNearbyHazards();
+                    selectedPosition = null;
+                } else {
+                    alert('신고에 실패했습니다.');
+                }
+            });
+        }
+
+        // 페이지 로드 시 지도 초기화
+        window.onload = function() {
+            initMap();
+        };
+    </script>
+</body>
+</html>
+
