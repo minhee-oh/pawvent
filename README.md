@@ -171,22 +171,6 @@ kakao.map.api-key=YOUR_KAKAO_MAP_API_KEY
 - 사용자 랭킹 시스템
 - 리워드 시스템
 
-## 🤝 기여하기
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📄 라이선스
-
-이 프로젝트는 MIT 라이선스를 따릅니다.
-
-## 📞 연락처
-
-프로젝트에 대한 문의사항이나 제안사항이 있으시면 언제든지 연락주세요!
-
 ---
 
 **Pawvent** - 반려견과 함께하는 안전한 산책의 시작 🐕💙
