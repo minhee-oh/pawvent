@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
@@ -30,6 +31,7 @@ public class UserService {
      * @return 현재 로그인된 사용자 엔티티
      * @throws IllegalArgumentException 사용자를 찾을 수 없는 경우
      */
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
     public User getCurrentUser(Authentication authentication) {
         // 인증이 없거나 anonymous인 경우 더미 사용자 반환 (개발용)
         if (authentication == null || !authentication.isAuthenticated() || 
@@ -48,11 +50,16 @@ public class UserService {
                 OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
                 Long kakaoId = oauth2User.getAttribute("id");
                 
-                return userRepository.findByKakaoId(kakaoId)
+                // 카카오 ID로 사용자 조회 후, ID로 다시 조회하여 managed 상태로 만들기
+                User user = userRepository.findByKakaoId(kakaoId)
                         .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                // managed 상태의 User를 얻기 위해 ID로 다시 조회
+                return getUserById(user.getId());
             } catch (Exception ex) {
                 // 개발용: 더미 사용자 반환
-                return getOrCreateDummyUser();
+                User dummyUser = getOrCreateDummyUser();
+                // managed 상태의 User를 얻기 위해 ID로 다시 조회
+                return getUserById(dummyUser.getId());
             }
         }
     }
@@ -60,8 +67,9 @@ public class UserService {
     /**
      * 더미 사용자를 조회하거나 생성합니다 (개발용)
      * INSERT를 수행하므로 readOnly=false로 설정
+     * MANDATORY 전파로 기존 트랜잭션에 참여하거나, 없으면 새 트랜잭션 시작
      */
-    @Transactional(readOnly = false)
+    @Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)
     private User getOrCreateDummyUser() {
         return userRepository.findAll().stream()
                 .findFirst()
@@ -84,6 +92,7 @@ public class UserService {
      * @return 해당 사용자 엔티티
      * @throws IllegalArgumentException 사용자를 찾을 수 없는 경우
      */
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
     public User getUserById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));

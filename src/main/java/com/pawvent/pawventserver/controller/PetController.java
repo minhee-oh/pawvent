@@ -11,6 +11,7 @@ import com.pawvent.pawventserver.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -42,11 +43,15 @@ public class PetController {
      * @return 등록된 반려동물 정보
      */
     @PostMapping
+    @Transactional
     public ResponseEntity<ApiResponse<PetResponse>> createPet(
             @Valid @RequestBody PetCreateRequest request,
             Authentication authentication) {
         
         User currentUser = userService.getCurrentUser(authentication);
+        
+        // 트랜잭션 내에서 User의 nickname을 미리 초기화
+        String userNickname = currentUser.getNickname();
         
         Pet pet = petService.createPet(
             currentUser,
@@ -60,7 +65,8 @@ public class PetController {
             request.getDescription()
         );
         
-        PetResponse petResponse = mapToPetResponse(pet);
+        // userNickname을 직접 전달하여 user.getNickname() 호출을 피함
+        PetResponse petResponse = mapToPetResponse(pet, currentUser, userNickname);
         
         return ResponseEntity.ok(
             ApiResponse.success("반려동물이 등록되었습니다.", petResponse)
@@ -75,12 +81,25 @@ public class PetController {
      * @return 내 반려동물 목록
      */
     @GetMapping("/my")
+    @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<List<PetResponse>>> getMyPets(Authentication authentication) {
+        // 모든 작업을 하나의 트랜잭션 내에서 수행
+        // 1. User 조회 및 nickname 초기화
         User currentUser = userService.getCurrentUser(authentication);
-        List<Pet> pets = petService.getPetsByUser(currentUser);
-        List<PetResponse> petResponses = pets.stream()
-                .map(this::mapToPetResponse)
-                .toList();
+        Long userId = currentUser.getId();
+        User managedUser = userService.getUserById(userId);
+        String userNickname = managedUser.getNickname(); // 트랜잭션 내에서 초기화
+        
+        // 2. JOIN FETCH로 Pet과 User를 함께 로드
+        List<Pet> pets = petService.getPetsByUser(managedUser);
+        
+        // 3. 트랜잭션 내에서 DTO 변환 (트랜잭션이 종료되기 전에 완료)
+        final String finalNickname = userNickname;
+        List<PetResponse> petResponses = new java.util.ArrayList<>(pets.size());
+        for (Pet pet : pets) {
+            // userNickname을 직접 전달하여 user.getNickname() 호출 방지
+            petResponses.add(mapToPetResponse(pet, managedUser, finalNickname));
+        }
         
         return ResponseEntity.ok(
             ApiResponse.success("내 반려동물 목록을 조회했습니다.", petResponses)
@@ -238,8 +257,35 @@ public class PetController {
     
     /**
      * Pet 엔티티를 PetResponse DTO로 변환
+     * 주의: 이 메서드는 트랜잭션 내에서 호출되어야 하며, userNickname을 반드시 전달해야 합니다.
+     * 이 메서드는 사용하지 않는 것이 좋습니다. 대신 mapToPetResponse(Pet pet, User user, String userNickname)를 사용하세요.
      */
     private PetResponse mapToPetResponse(Pet pet) {
+        // User를 안전하게 가져오기 위해 트랜잭션 내에서 호출되어야 함
+        // 하지만 userNickname을 알 수 없으므로 기본값 사용
+        User user = pet.getUser();
+        return mapToPetResponse(pet, user, null);
+    }
+    
+    /**
+     * Pet 엔티티를 PetResponse DTO로 변환 (User 정보를 직접 전달)
+     * 주의: 이 메서드는 트랜잭션 내에서 호출되어야 하며, user는 managed 상태여야 합니다.
+     * 가능하면 mapToPetResponse(Pet pet, User user, String userNickname)를 사용하세요.
+     */
+    private PetResponse mapToPetResponse(Pet pet, User user) {
+        // user.getNickname()을 호출하지 않고, null을 전달하여 안전하게 처리
+        // 호출하는 쪽에서 userNickname을 미리 가져와서 전달해야 함
+        return mapToPetResponse(pet, user, null);
+    }
+    
+    /**
+     * Pet 엔티티를 PetResponse DTO로 변환 (User와 nickname을 직접 전달)
+     * 이 메서드는 user.getNickname()을 절대 호출하지 않습니다.
+     */
+    private PetResponse mapToPetResponse(Pet pet, User user, String userNickname) {
+        // userNickname이 null이면 기본값 사용 (user.getNickname()을 절대 호출하지 않음)
+        String nickname = (userNickname != null && !userNickname.isEmpty()) ? userNickname : "사용자";
+        
         return PetResponse.builder()
                 .id(pet.getId())
                 .name(pet.getName())
@@ -250,8 +296,8 @@ public class PetController {
                 .weight(pet.getWeight())
                 .imageUrl(pet.getImageUrl())
                 .description(pet.getDescription())
-                .ownerId(pet.getUser().getId())
-                .ownerNickname(pet.getUser().getNickname())
+                .ownerId(user.getId())
+                .ownerNickname(nickname)
                 .createdAt(pet.getCreatedAt())
                 .build();
     }

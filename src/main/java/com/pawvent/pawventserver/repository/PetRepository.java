@@ -29,6 +29,13 @@ public interface PetRepository extends JpaRepository<Pet, Long> {
     List<Pet> findByUserAndDeletedAtIsNullOrderByCreatedAtDesc(User user);
     
     /**
+     * 특정 사용자의 활성 펫을 User와 함께 최신순으로 조회 (JOIN FETCH)
+     * DISTINCT를 사용하여 중복 제거 (JOIN FETCH로 인한 중복 방지)
+     */
+    @Query("SELECT DISTINCT p FROM Pet p JOIN FETCH p.user WHERE p.user = :user AND p.deletedAt IS NULL ORDER BY p.createdAt DESC")
+    List<Pet> findByUserAndDeletedAtIsNullOrderByCreatedAtDescWithUser(@Param("user") User user);
+    
+    /**
      * 모든 활성 펫을 최신순으로 조회
      */
     List<Pet> findByDeletedAtIsNullOrderByCreatedAtDesc();

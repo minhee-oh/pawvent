@@ -5,6 +5,7 @@ import com.pawvent.pawventserver.domain.User;
 import com.pawvent.pawventserver.repository.PetRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -36,7 +37,7 @@ public class PetService {
      */
     @Transactional
     public Pet createPet(User user, String name, String species, String breed, 
-                        LocalDate birthDate, String gender, double weight, 
+                        LocalDate birthDate, String gender, Double weight, 
                         String imageUrl, String description) {
         Pet pet = Pet.builder()
                 .user(user)
@@ -68,12 +69,16 @@ public class PetService {
     /**
      * 특정 사용자의 모든 반려동물을 조회합니다.
      * 삭제되지 않은 반려동물만 최신 등록순으로 반환합니다.
+     * User 정보를 함께 조회하여 LazyInitializationException을 방지합니다.
      * 
      * @param user 반려동물을 조회할 소유주
      * @return 해당 사용자의 반려동물 목록
      */
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
     public List<Pet> getPetsByUser(User user) {
-        return petRepository.findByUserAndDeletedAtIsNullOrderByCreatedAtDesc(user);
+        // JOIN FETCH로 User를 함께 로드하여 LazyInitializationException 방지
+        // REQUIRED 전파로 기존 트랜잭션이 있으면 참여하고, 없으면 새 트랜잭션 시작
+        return petRepository.findByUserAndDeletedAtIsNullOrderByCreatedAtDescWithUser(user);
     }
     
     /**
@@ -111,7 +116,7 @@ public class PetService {
     
     @Transactional
     public Pet updatePet(Long petId, String name, String species, String breed, 
-                        LocalDate birthDate, String gender, double weight, 
+                        LocalDate birthDate, String gender, Double weight, 
                         String imageUrl, String description, User user) {
         Pet pet = getPetById(petId);
         
