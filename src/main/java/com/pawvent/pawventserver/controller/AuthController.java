@@ -31,8 +31,14 @@ public class AuthController {
      */
     @GetMapping("/test")
     public ResponseEntity<ApiResponse<String>> test() {
-        log.info("✅ /api/auth/test 엔드포인트 호출됨!");
-        return ResponseEntity.ok(ApiResponse.success("AuthController가 정상 작동합니다.", "OK"));
+        try {
+            log.info("✅ /api/auth/test 엔드포인트 호출됨!");
+            return ResponseEntity.ok(ApiResponse.success("AuthController가 정상 작동합니다.", "OK"));
+        } catch (Exception e) {
+            log.error("❌ /api/auth/test 엔드포인트 오류 발생", e);
+            return ResponseEntity.status(500)
+                .body(ApiResponse.error("서버 오류가 발생했습니다: " + e.getMessage()));
+        }
     }
 
     /**
