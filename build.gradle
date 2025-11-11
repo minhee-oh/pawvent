@@ -17,6 +17,16 @@ java {
 // 컴파일 옵션: 파라미터 이름 보존 (리플렉션을 통한 파라미터 이름 접근)
 tasks.withType(JavaCompile) {
 	options.compilerArgs += ['-parameters']
+	options.encoding = 'UTF-8'
+}
+
+// Gradle 컴파일 옵션도 설정
+compileJava {
+	options.compilerArgs += ['-parameters']
+}
+
+compileTestJava {
+	options.compilerArgs += ['-parameters']
 }
 
 configurations {

@@ -36,6 +36,12 @@ public interface PetRepository extends JpaRepository<Pet, Long> {
     List<Pet> findByUserAndDeletedAtIsNullOrderByCreatedAtDescWithUser(@Param("user") User user);
     
     /**
+     * ID로 Pet을 User와 함께 조회 (JOIN FETCH)
+     */
+    @Query("SELECT p FROM Pet p JOIN FETCH p.user WHERE p.id = :petId")
+    java.util.Optional<Pet> findByIdWithUser(@Param("petId") Long petId);
+    
+    /**
      * 모든 활성 펫을 최신순으로 조회
      */
     List<Pet> findByDeletedAtIsNullOrderByCreatedAtDesc();
