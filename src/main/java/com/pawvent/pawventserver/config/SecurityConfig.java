@@ -33,6 +33,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/routes/shared").permitAll()
                         .requestMatchers("/api/hazards/nearby").permitAll()
+                        .requestMatchers("/uploads/**").permitAll() // 업로드된 파일 접근 허용
                         // 나머지 API는 인증 필요
                         .requestMatchers("/api/**").authenticated()
                         // 기타 경로는 허용 (정적 리소스 등)
