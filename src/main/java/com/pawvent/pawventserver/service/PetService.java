@@ -67,6 +67,19 @@ public class PetService {
     }
     
     /**
+     * ID로 특정 반려동물을 User와 함께 조회합니다 (JOIN FETCH).
+     * 
+     * @param petId 조회할 반려동물의 고유 ID
+     * @return 반려동물 엔티티 (User가 함께 로드됨)
+     * @throws IllegalArgumentException 반려동물을 찾을 수 없는 경우
+     */
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
+    public Pet getPetByIdWithUser(Long petId) {
+        return petRepository.findByIdWithUser(petId)
+                .orElseThrow(() -> new IllegalArgumentException("반려동물을 찾을 수 없습니다."));
+    }
+    
+    /**
      * 특정 사용자의 모든 반려동물을 조회합니다.
      * 삭제되지 않은 반려동물만 최신 등록순으로 반환합니다.
      * User 정보를 함께 조회하여 LazyInitializationException을 방지합니다.
@@ -118,29 +131,51 @@ public class PetService {
     public Pet updatePet(Long petId, String name, String species, String breed, 
                         LocalDate birthDate, String gender, Double weight, 
                         String imageUrl, String description, User user) {
-        Pet pet = getPetById(petId);
+        // JOIN FETCH로 User를 함께 로드하여 LazyInitializationException 방지
+        Pet pet = getPetByIdWithUser(petId);
         
         if (!pet.getUser().getId().equals(user.getId())) {
             throw new IllegalArgumentException("반려동물 정보를 수정할 권한이 없습니다.");
         }
         
-        Pet updatedPet = pet.toBuilder()
-                .name(name)
-                .species(species)
-                .breed(breed)
-                .birthDate(birthDate)
-                .gender(gender)
-                .weight(weight)
-                .imageUrl(imageUrl)
-                .description(description)
-                .build();
+        // null이 아닌 값만 업데이트 (null이면 기존 값 유지)
+        Pet.PetBuilder builder = pet.toBuilder();
         
-        return petRepository.save(updatedPet);
+        if (name != null && !name.trim().isEmpty()) {
+            builder.name(name.trim());
+        }
+        if (species != null) {
+            builder.species(species.trim().isEmpty() ? null : species.trim());
+        }
+        if (breed != null) {
+            builder.breed(breed.trim().isEmpty() ? null : breed.trim());
+        }
+        if (birthDate != null) {
+            builder.birthDate(birthDate);
+        }
+        if (gender != null) {
+            builder.gender(gender.trim().isEmpty() ? null : gender.trim());
+        }
+        if (weight != null) {
+            builder.weight(weight);
+        }
+        if (imageUrl != null) {
+            builder.imageUrl(imageUrl.trim().isEmpty() ? null : imageUrl.trim());
+        }
+        if (description != null) {
+            builder.description(description.trim().isEmpty() ? null : description.trim());
+        }
+        
+        Pet updatedPet = builder.build();
+        Pet savedPet = petRepository.save(updatedPet);
+        // save 후 다시 조회하여 User를 함께 로드 (트랜잭션 내에서)
+        return getPetByIdWithUser(savedPet.getId());
     }
     
     @Transactional
     public Pet updatePetWeight(Long petId, double weight, User user) {
-        Pet pet = getPetById(petId);
+        // JOIN FETCH로 User를 함께 로드하여 LazyInitializationException 방지
+        Pet pet = getPetByIdWithUser(petId);
         
         if (!pet.getUser().getId().equals(user.getId())) {
             throw new IllegalArgumentException("반려동물 정보를 수정할 권한이 없습니다.");
@@ -150,12 +185,15 @@ public class PetService {
                 .weight(weight)
                 .build();
         
-        return petRepository.save(updatedPet);
+        Pet savedPet = petRepository.save(updatedPet);
+        // save 후 다시 조회하여 User를 함께 로드 (트랜잭션 내에서)
+        return getPetByIdWithUser(savedPet.getId());
     }
     
     @Transactional
     public Pet updatePetImage(Long petId, String imageUrl, User user) {
-        Pet pet = getPetById(petId);
+        // JOIN FETCH로 User를 함께 로드하여 LazyInitializationException 방지
+        Pet pet = getPetByIdWithUser(petId);
         
         if (!pet.getUser().getId().equals(user.getId())) {
             throw new IllegalArgumentException("반려동물 정보를 수정할 권한이 없습니다.");
@@ -165,12 +203,15 @@ public class PetService {
                 .imageUrl(imageUrl)
                 .build();
         
-        return petRepository.save(updatedPet);
+        Pet savedPet = petRepository.save(updatedPet);
+        // save 후 다시 조회하여 User를 함께 로드 (트랜잭션 내에서)
+        return getPetByIdWithUser(savedPet.getId());
     }
     
     @Transactional
     public void deletePet(Long petId, User user) {
-        Pet pet = getPetById(petId);
+        // JOIN FETCH로 User를 함께 로드하여 LazyInitializationException 방지
+        Pet pet = getPetByIdWithUser(petId);
         
         if (!pet.getUser().getId().equals(user.getId())) {
             throw new IllegalArgumentException("반려동물을 삭제할 권한이 없습니다.");

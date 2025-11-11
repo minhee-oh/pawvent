@@ -114,9 +114,19 @@ public class PetController {
      * @return 반려동물의 상세 정보
      */
     @GetMapping("/{petId}")
-    public ResponseEntity<ApiResponse<PetResponse>> getPet(@PathVariable Long petId) {
-        Pet pet = petService.getPetById(petId);
-        PetResponse petResponse = mapToPetResponse(pet);
+    @Transactional(readOnly = true)
+    public ResponseEntity<ApiResponse<PetResponse>> getPet(@PathVariable("petId") Long petId) {
+        // JOIN FETCH로 User를 함께 로드
+        Pet pet = petService.getPetByIdWithUser(petId);
+        User user = pet.getUser();
+        
+        // 트랜잭션 내에서 User의 nickname을 미리 초기화
+        // JOIN FETCH로 로드되었지만, 명시적으로 접근하여 초기화 보장
+        String userNickname = (user != null && user.getNickname() != null) 
+                ? user.getNickname() 
+                : "사용자";
+        
+        PetResponse petResponse = mapToPetResponse(pet, user, userNickname);
         
         return ResponseEntity.ok(
             ApiResponse.success("반려동물 정보를 조회했습니다.", petResponse)
@@ -133,16 +143,25 @@ public class PetController {
      * @return 수정된 반려동물 정보
      */
     @PutMapping("/{petId}")
+    @Transactional
     public ResponseEntity<ApiResponse<PetResponse>> updatePet(
-            @PathVariable Long petId,
+            @PathVariable("petId") Long petId,
             @Valid @RequestBody PetUpdateRequest request,
             Authentication authentication) {
         
         User currentUser = userService.getCurrentUser(authentication);
+        Long userId = currentUser.getId();
+        User managedUser = userService.getUserById(userId);
+        String userNickname = managedUser.getNickname();
+        
+        // name이 null이면 기존 이름 유지, null이 아니면 업데이트
+        String name = (request.getName() != null && !request.getName().trim().isEmpty()) 
+                ? request.getName().trim() 
+                : null;
         
         Pet updatedPet = petService.updatePet(
             petId,
-            request.getName(),
+            name,
             request.getSpecies(),
             request.getBreed(),
             request.getBirthDate(),
@@ -150,10 +169,11 @@ public class PetController {
             request.getWeight(),
             request.getImageUrl(),
             request.getDescription(),
-            currentUser
+            managedUser
         );
         
-        PetResponse petResponse = mapToPetResponse(updatedPet);
+        // 트랜잭션 내에서 DTO 변환
+        PetResponse petResponse = mapToPetResponse(updatedPet, managedUser, userNickname);
         
         return ResponseEntity.ok(
             ApiResponse.success("반려동물 정보가 수정되었습니다.", petResponse)
@@ -164,14 +184,19 @@ public class PetController {
      * 반려동물 체중 업데이트
      */
     @PatchMapping("/{petId}/weight")
+    @Transactional
     public ResponseEntity<ApiResponse<PetResponse>> updatePetWeight(
-            @PathVariable Long petId,
+            @PathVariable("petId") Long petId,
             @RequestParam Double weight,
             Authentication authentication) {
         
         User currentUser = userService.getCurrentUser(authentication);
-        Pet updatedPet = petService.updatePetWeight(petId, weight, currentUser);
-        PetResponse petResponse = mapToPetResponse(updatedPet);
+        Long userId = currentUser.getId();
+        User managedUser = userService.getUserById(userId);
+        String userNickname = managedUser.getNickname();
+        
+        Pet updatedPet = petService.updatePetWeight(petId, weight, managedUser);
+        PetResponse petResponse = mapToPetResponse(updatedPet, managedUser, userNickname);
         
         return ResponseEntity.ok(
             ApiResponse.success("반려동물 체중이 업데이트되었습니다.", petResponse)
@@ -182,14 +207,19 @@ public class PetController {
      * 반려동물 프로필 이미지 업데이트
      */
     @PatchMapping("/{petId}/image")
+    @Transactional
     public ResponseEntity<ApiResponse<PetResponse>> updatePetImage(
-            @PathVariable Long petId,
+            @PathVariable("petId") Long petId,
             @RequestParam String imageUrl,
             Authentication authentication) {
         
         User currentUser = userService.getCurrentUser(authentication);
-        Pet updatedPet = petService.updatePetImage(petId, imageUrl, currentUser);
-        PetResponse petResponse = mapToPetResponse(updatedPet);
+        Long userId = currentUser.getId();
+        User managedUser = userService.getUserById(userId);
+        String userNickname = managedUser.getNickname();
+        
+        Pet updatedPet = petService.updatePetImage(petId, imageUrl, managedUser);
+        PetResponse petResponse = mapToPetResponse(updatedPet, managedUser, userNickname);
         
         return ResponseEntity.ok(
             ApiResponse.success("반려동물 프로필 이미지가 업데이트되었습니다.", petResponse)
@@ -200,12 +230,15 @@ public class PetController {
      * 반려동물 삭제
      */
     @DeleteMapping("/{petId}")
+    @Transactional
     public ResponseEntity<ApiResponse<Void>> deletePet(
-            @PathVariable Long petId,
+            @PathVariable("petId") Long petId,
             Authentication authentication) {
         
         User currentUser = userService.getCurrentUser(authentication);
-        petService.deletePet(petId, currentUser);
+        Long userId = currentUser.getId();
+        User managedUser = userService.getUserById(userId);
+        petService.deletePet(petId, managedUser);
         
         return ResponseEntity.ok(
             ApiResponse.success("반려동물 정보가 삭제되었습니다.", null)
@@ -216,7 +249,7 @@ public class PetController {
      * 종별 반려동물 조회
      */
     @GetMapping("/species/{species}")
-    public ResponseEntity<ApiResponse<List<PetResponse>>> getPetsBySpecies(@PathVariable String species) {
+    public ResponseEntity<ApiResponse<List<PetResponse>>> getPetsBySpecies(@PathVariable("species") String species) {
         List<Pet> pets = petService.getPetsBySpecies(species);
         List<PetResponse> petResponses = pets.stream()
                 .map(this::mapToPetResponse)
@@ -231,7 +264,7 @@ public class PetController {
      * 품종별 반려동물 조회
      */
     @GetMapping("/breeds/{breed}")
-    public ResponseEntity<ApiResponse<List<PetResponse>>> getPetsByBreed(@PathVariable String breed) {
+    public ResponseEntity<ApiResponse<List<PetResponse>>> getPetsByBreed(@PathVariable("breed") String breed) {
         List<Pet> pets = petService.getPetsByBreed(breed);
         List<PetResponse> petResponses = pets.stream()
                 .map(this::mapToPetResponse)
@@ -246,7 +279,7 @@ public class PetController {
      * 반려동물 나이 계산
      */
     @GetMapping("/{petId}/age")
-    public ResponseEntity<ApiResponse<Integer>> getPetAge(@PathVariable Long petId) {
+    public ResponseEntity<ApiResponse<Integer>> getPetAge(@PathVariable("petId") Long petId) {
         Pet pet = petService.getPetById(petId);
         int age = petService.calculateAge(pet);
         

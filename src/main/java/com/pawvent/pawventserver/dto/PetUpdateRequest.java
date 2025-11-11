@@ -9,7 +9,6 @@ import java.time.LocalDate;
 
 @Data
 public class PetUpdateRequest {
-    @NotBlank
     @Size(min = 1, max = 60)
     private String name;
     
