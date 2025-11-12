@@ -9,5 +9,6 @@ public enum HazardCategory {
     WILDLIFE,       // 야생동물 출몰
     LOW_LIGHT,      // 조명 부족
     BIKE_CAR,       // 자전거·차량 위험
-    POOP_LEFT       // 배변 미수거
+    POOP_LEFT,      // 배변 미수거
+    OTHER           // 기타
 }

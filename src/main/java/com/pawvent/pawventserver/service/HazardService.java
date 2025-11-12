@@ -37,6 +37,10 @@ public class HazardService {
         return hazardRepository.findHazardsNearLocation(latitude, longitude, radiusInMeters);
     }
     
+    public Long getUserIdByHazardId(Long hazardId) {
+        return hazardRepository.findUserIdByHazardId(hazardId);
+    }
+    
     public List<Hazard> getHazardsByCategory(HazardCategory category) {
         return hazardRepository.findByCategory(category);
     }
@@ -47,8 +51,33 @@ public class HazardService {
     }
     
     @Transactional
-    public void deleteHazard(Long hazardId) {
+    public Hazard updateHazard(Long hazardId, User user, HazardCategory category, String description, Point location, String imageUrl) {
         Hazard hazard = getHazardById(hazardId);
+        
+        // 권한 체크: 본인이 신고한 위험 스팟만 수정 가능
+        Long reporterUserId = getUserIdByHazardId(hazardId);
+        if (reporterUserId == null || !reporterUserId.equals(user.getId())) {
+            throw new IllegalArgumentException("위험 스팟을 수정할 권한이 없습니다.");
+        }
+        
+        hazard.setCategory(category);
+        hazard.setDescription(description);
+        hazard.setLocation(location);
+        hazard.setImageUrl(imageUrl);
+        
+        return hazardRepository.save(hazard);
+    }
+    
+    @Transactional
+    public void deleteHazard(Long hazardId, User user) {
+        Hazard hazard = getHazardById(hazardId);
+        
+        // 권한 체크: 본인이 신고한 위험 스팟만 삭제 가능
+        Long reporterUserId = getUserIdByHazardId(hazardId);
+        if (reporterUserId == null || !reporterUserId.equals(user.getId())) {
+            throw new IllegalArgumentException("위험 스팟을 삭제할 권한이 없습니다.");
+        }
+        
         hazard.setDeletedAt(OffsetDateTime.now());
         hazardRepository.save(hazard);
     }

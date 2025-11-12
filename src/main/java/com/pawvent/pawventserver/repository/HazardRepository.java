@@ -22,4 +22,8 @@ public interface HazardRepository extends JpaRepository<Hazard, Long> {
             @Param("longitude") double longitude, 
             @Param("radiusInMeters") double radiusInMeters
     );
+    
+    @Query(value = "SELECT h.user_id FROM hazard h WHERE h.id = :hazardId",
+            nativeQuery = true)
+    Long findUserIdByHazardId(@Param("hazardId") Long hazardId);
 }
