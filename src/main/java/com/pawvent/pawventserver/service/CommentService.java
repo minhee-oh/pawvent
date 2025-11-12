@@ -19,6 +19,7 @@ import java.util.List;
 public class CommentService {
     
     private final CommentRepository commentRepository;
+    private final CommunityPostService communityPostService;
     
     /**
      * 새로운 댓글을 생성합니다.
@@ -37,7 +38,9 @@ public class CommentService {
                 .content(content)
                 .build();
         
-        return commentRepository.save(comment);
+        Comment savedComment = commentRepository.save(comment);
+        communityPostService.incrementCommentCount(post.getId());
+        return savedComment;
     }
     
     public Comment getCommentById(Long commentId) {
@@ -81,6 +84,7 @@ public class CommentService {
                 .build();
         
         commentRepository.save(deletedComment);
+        communityPostService.decrementCommentCount(comment.getPost().getId());
     }
     
     @Transactional

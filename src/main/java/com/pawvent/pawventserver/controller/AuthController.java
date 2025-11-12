@@ -32,8 +32,8 @@ public class AuthController {
     @GetMapping("/test")
     public ResponseEntity<ApiResponse<String>> test() {
         try {
-            log.info("✅ /api/auth/test 엔드포인트 호출됨!");
-            return ResponseEntity.ok(ApiResponse.success("AuthController가 정상 작동합니다.", "OK"));
+        log.info("✅ /api/auth/test 엔드포인트 호출됨!");
+        return ResponseEntity.ok(ApiResponse.success("AuthController가 정상 작동합니다.", "OK"));
         } catch (Exception e) {
             log.error("❌ /api/auth/test 엔드포인트 오류 발생", e);
             return ResponseEntity.status(500)
@@ -67,6 +67,15 @@ public class AuthController {
             String email = (String) kakaoAccount.get("email");
             String nickname = (String) profile.get("nickname");
             String profileImageUrl = (String) profile.get("profile_image_url");
+            
+            log.info("카카오 사용자 정보 - 닉네임: {}, 프로필 이미지: {}", nickname, profileImageUrl);
+            log.debug("카카오 프로필 전체 정보: {}", profile);
+            log.debug("카카오 계정 전체 정보: {}", kakaoAccount);
+            
+            // 프로필 이미지가 null이거나 빈 문자열인 경우 로깅
+            if (profileImageUrl == null || profileImageUrl.trim().isEmpty()) {
+                log.warn("카카오 프로필 이미지가 없습니다. 사용자 ID: {}, 닉네임: {}", kakaoId, nickname);
+            }
 
             // 사용자 조회 또는 생성
             User user = getUserOrCreate(kakaoId, email, nickname, profileImageUrl);
@@ -96,12 +105,15 @@ public class AuthController {
      */
     private Map<String, Object> getKakaoUserInfo(String accessToken) {
         try {
-            return webClient.get()
+            Map<String, Object> userInfo = webClient.get()
                     .uri("https://kapi.kakao.com/v2/user/me")
                     .header("Authorization", "Bearer " + accessToken)
                     .retrieve()
                     .bodyToMono(Map.class)
                     .block();
+            
+            log.debug("카카오 API 응답: {}", userInfo);
+            return userInfo;
         } catch (Exception e) {
             log.error("카카오 사용자 정보 조회 실패", e);
             return null;

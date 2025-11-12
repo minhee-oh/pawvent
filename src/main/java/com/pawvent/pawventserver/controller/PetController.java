@@ -107,6 +107,32 @@ public class PetController {
     }
     
     /**
+     * 특정 사용자의 모든 반려동물을 조회합니다.
+     * 삭제되지 않은 반려동물만 최신 등록순으로 반환됩니다.
+     * 모든 사용자가 다른 사용자의 반려동물 정보를 볼 수 있습니다.
+     * 
+     * @param userId 조회할 사용자의 고유 ID
+     * @return 해당 사용자의 반려동물 목록
+     */
+    @GetMapping("/by-user/{userId}")
+    @Transactional(readOnly = true)
+    public ResponseEntity<ApiResponse<List<PetResponse>>> getPetsByUserId(@PathVariable("userId") Long userId) {
+        User user = userService.getUserById(userId);
+        String userNickname = user.getNickname();
+        
+        List<Pet> pets = petService.getPetsByUser(user);
+        final String finalNickname = userNickname;
+        List<PetResponse> petResponses = new java.util.ArrayList<>(pets.size());
+        for (Pet pet : pets) {
+            petResponses.add(mapToPetResponse(pet, user, finalNickname));
+        }
+        
+        return ResponseEntity.ok(
+            ApiResponse.success("사용자의 반려동물 목록을 조회했습니다.", petResponses)
+        );
+    }
+    
+    /**
      * ID로 특정 반려동물의 상세 정보를 조회합니다.
      * 모든 사용자가 다른 사용자의 반려동물 정보를 볼 수 있습니다.
      * 

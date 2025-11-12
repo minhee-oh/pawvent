@@ -1,19 +1,30 @@
 package com.pawvent.pawventserver.controller;
 
-import com.pawvent.pawventserver.dto.ApiResponse;
-import com.pawvent.pawventserver.dto.UserResponse;
-import com.pawvent.pawventserver.dto.UserUpdateRequest;
-import com.pawvent.pawventserver.domain.User;
-import com.pawvent.pawventserver.service.UserService;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
+import jakarta.validation.Valid;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.validation.Valid;
-import java.util.List;
+import com.pawvent.pawventserver.domain.User;
+import com.pawvent.pawventserver.dto.ApiResponse;
+import com.pawvent.pawventserver.dto.UserResponse;
+import com.pawvent.pawventserver.dto.UserUpdateRequest;
+import com.pawvent.pawventserver.service.UserService;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 사용자 관리 컨트롤러
@@ -24,6 +35,7 @@ import java.util.List;
  * @version 1.0
  * @since 2024
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -57,13 +69,28 @@ public class UserController {
      * @throws IllegalArgumentException 존재하지 않는 사용자 ID인 경우
      */
     @GetMapping("/{userId}")
-    public ResponseEntity<ApiResponse<UserResponse>> getUser(@PathVariable Long userId) {
-        User user = userService.getUserById(userId);
-        UserResponse userResponse = mapToUserResponse(user);
-        
-        return ResponseEntity.ok(
-            ApiResponse.success("사용자 정보를 조회했습니다.", userResponse)
-        );
+    public ResponseEntity<ApiResponse<UserResponse>> getUser(
+            @PathVariable("userId") Long userId) {
+        try {
+            log.debug("사용자 조회 요청 - userId: {}", userId);
+            User user = userService.getUserById(userId);
+            UserResponse userResponse = mapToUserResponse(user);
+            
+            log.debug("사용자 조회 성공 - userId: {}, nickname: {}, profileImageUrl: {}", 
+                userId, user.getNickname(), user.getProfileImageUrl());
+            
+            return ResponseEntity.ok(
+                ApiResponse.success("사용자 정보를 조회했습니다.", userResponse)
+            );
+        } catch (IllegalArgumentException e) {
+            log.warn("사용자 조회 실패 - userId: {}, 에러: {}", userId, e.getMessage());
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("사용자를 찾을 수 없습니다: " + e.getMessage()));
+        } catch (Exception e) {
+            log.error("사용자 조회 중 예상치 못한 오류 발생 - userId: {}", userId, e);
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("사용자 정보 조회에 실패했습니다: " + e.getMessage()));
+        }
     }
     
     /**
@@ -175,11 +202,15 @@ public class UserController {
      * User 엔티티를 UserResponse DTO로 변환
      */
     private UserResponse mapToUserResponse(User user) {
+        String profileImageUrl = user.getProfileImageUrl();
+        log.debug("mapToUserResponse - userId: {}, nickname: {}, profileImageUrl: {}", 
+            user.getId(), user.getNickname(), profileImageUrl);
+        
         return UserResponse.builder()
                 .id(user.getId())
                 .nickname(user.getNickname())
                 .email(user.getEmail())
-                .profileImageUrl(user.getProfileImageUrl())
+                .profileImageUrl(profileImageUrl)
                 .role(user.getRole())
                 .createdAt(user.getCreatedAt())
                 .build();
